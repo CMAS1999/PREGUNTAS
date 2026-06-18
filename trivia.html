@@ -3,53 +3,31 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Crear Trivia</title>
+<title>Trivia</title>
 <style>
 *{box-sizing:border-box;}
 body{font-family:Arial;background:#f4f6f9;padding:15px;margin:0;}
-.contenedor{max-width:650px;margin:auto;background:white;padding:20px;border-radius:18px;box-shadow:0 0 20px #ccc;}
+.contenedor{max-width:750px;margin:auto;background:white;padding:20px;border-radius:18px;box-shadow:0 0 20px #ccc;}
 h1{text-align:center;color:#003b7a;}
-input,select{width:100%;padding:12px;border:2px solid #0078d4;border-radius:8px;margin-top:10px;}
-button{margin-top:15px;padding:12px;background:#f28c28;color:white;border:none;border-radius:8px;cursor:pointer;width:100%;font-weight:bold;}
-.boton-nav{display:inline-block;text-decoration:none;background:#003b7a;color:white;padding:12px 20px;border-radius:10px;font-weight:bold;}
-.lista{margin-top:20px;background:#f1f7ff;padding:15px;border-radius:10px;}
-.item{padding:10px;border-bottom:1px solid #ddd;}
+.usuario{background:#fff3e6;padding:12px;border-left:6px solid #f28c28;border-radius:8px;font-weight:bold;color:#003b7a;}
+.pregunta{margin-top:20px;padding:20px;border:2px solid #f28c28;border-radius:14px;}
+.opcion{padding:10px;background:#f8fbff;border-radius:8px;margin:8px 0;}
+button{margin-top:15px;padding:12px;background:#0078d4;color:white;border:none;border-radius:8px;cursor:pointer;width:100%;font-weight:bold;}
 </style>
 </head>
 <body>
 
 <div class="contenedor">
-<h1>Crear Trivia</h1>
-
-<div style="text-align:center;margin-bottom:20px;">
-  <a href="ranking.html" class="boton-nav">🏆 Ver Ranking</a>
-</div>
-
-<input id="pregunta" placeholder="Pregunta">
-<input id="opcionA" placeholder="Opción A">
-<input id="opcionB" placeholder="Opción B">
-<input id="opcionC" placeholder="Opción C">
-<input id="opcionD" placeholder="Opción D">
-
-<select id="correcta">
-  <option value="">Selecciona respuesta correcta</option>
-  <option value="A">Opción A</option>
-  <option value="B">Opción B</option>
-  <option value="C">Opción C</option>
-  <option value="D">Opción D</option>
-</select>
-
-<button onclick="guardarTrivia()">Guardar trivia</button>
-
-<div class="lista">
-  <b>Trivias registradas:</b>
-  <div id="listaTrivias"></div>
-</div>
+<h1>Trivia</h1>
+<div class="usuario" id="usuario"></div>
+<div id="trivias"></div>
+<button onclick="enviarRespuestas()">Enviar respuestas</button>
+<div id="resultado"></div>
 </div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getFirestore, collection, addDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getFirestore, collection, onSnapshot, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyAJnoku72zdNp4YpY5iMaNTRJXUb_GL2yk",
@@ -64,37 +42,79 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-window.guardarTrivia = async function(){
-  const pregunta = document.getElementById("pregunta").value.trim();
-  const A = document.getElementById("opcionA").value.trim();
-  const B = document.getElementById("opcionB").value.trim();
-  const C = document.getElementById("opcionC").value.trim();
-  const D = document.getElementById("opcionD").value.trim();
-  const correcta = document.getElementById("correcta").value;
+const nombre = localStorage.getItem("votanteNombre");
+const id = localStorage.getItem("votanteId");
 
-  if(!pregunta || !A || !B || !C || !D || !correcta){
-    alert("Completa todos los campos.");
+if(!nombre || !id){ window.location.href = "index.html"; }
+
+document.getElementById("usuario").innerHTML = "Participante: " + nombre;
+
+let trivias = [];
+
+onSnapshot(collection(db, "trivias"), snapshot => {
+  trivias = [];
+  snapshot.forEach(docSnap => {
+    trivias.push({id:docSnap.id, ...docSnap.data()});
+  });
+  mostrarTrivias();
+});
+
+function mostrarTrivias(){
+  const contenedor = document.getElementById("trivias");
+  contenedor.innerHTML = "";
+
+  if(trivias.length === 0){
+    contenedor.innerHTML = "<p>Aún no hay trivias registradas.</p>";
     return;
   }
 
-  await addDoc(collection(db, "trivias"), {
-    pregunta,
-    opciones:{A,B,C,D},
-    correcta,
+  trivias.forEach((t, index) => {
+    contenedor.innerHTML += `
+      <div class="pregunta">
+        <h3>${index + 1}. ${t.pregunta}</h3>
+
+        ${["A","B","C","D"].map(letra => `
+          <div class="opcion">
+            <label>
+              <input type="radio" name="${t.id}" value="${letra}">
+              ${letra}) ${t.opciones[letra]}
+            </label>
+          </div>
+        `).join("")}
+      </div>
+    `;
+  });
+}
+
+window.enviarRespuestas = async function(){
+  const refRespuesta = doc(db, "respuestas_trivia", id);
+  const existe = await getDoc(refRespuesta);
+
+  if(existe.exists()){
+    alert("Ya respondiste la trivia.");
+    return;
+  }
+
+  let puntaje = 0;
+
+  for(const t of trivias){
+    const seleccionado = document.querySelector(`input[name="${t.id}"]:checked`);
+
+    if(seleccionado && seleccionado.value === t.correcta){
+      puntaje++;
+    }
+  }
+
+  await setDoc(refRespuesta, {
+    nombre,
+    puntaje,
+    total: trivias.length,
     fecha:new Date().toISOString()
   });
 
-  alert("Trivia guardada.");
-  location.reload();
+  document.getElementById("resultado").innerHTML =
+    `<h2>Tu puntaje: ${puntaje} / ${trivias.length}</h2>`;
 };
-
-onSnapshot(collection(db, "trivias"), snapshot => {
-  let html = "";
-  snapshot.forEach(doc => {
-    html += `<div class="item">${doc.data().pregunta}</div>`;
-  });
-  document.getElementById("listaTrivias").innerHTML = html || "No hay trivias.";
-});
 </script>
 
 </body>
