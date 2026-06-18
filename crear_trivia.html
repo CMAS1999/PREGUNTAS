@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Crear Trivia</title>
+<style>
+*{box-sizing:border-box;}
+body{font-family:Arial;background:#f4f6f9;padding:15px;margin:0;}
+.contenedor{max-width:650px;margin:auto;background:white;padding:20px;border-radius:18px;box-shadow:0 0 20px #ccc;}
+h1{text-align:center;color:#003b7a;}
+input,select{width:100%;padding:12px;border:2px solid #0078d4;border-radius:8px;margin-top:10px;}
+button{margin-top:15px;padding:12px;background:#f28c28;color:white;border:none;border-radius:8px;cursor:pointer;width:100%;font-weight:bold;}
+.boton-nav{display:inline-block;text-decoration:none;background:#003b7a;color:white;padding:12px 20px;border-radius:10px;font-weight:bold;}
+.lista{margin-top:20px;background:#f1f7ff;padding:15px;border-radius:10px;}
+.item{padding:10px;border-bottom:1px solid #ddd;}
+</style>
+</head>
+<body>
+
+<div class="contenedor">
+<h1>Crear Trivia</h1>
+
+<div style="text-align:center;margin-bottom:20px;">
+  <a href="ranking.html" class="boton-nav">🏆 Ver Ranking</a>
+</div>
+
+<input id="pregunta" placeholder="Pregunta">
+<input id="opcionA" placeholder="Opción A">
+<input id="opcionB" placeholder="Opción B">
+<input id="opcionC" placeholder="Opción C">
+<input id="opcionD" placeholder="Opción D">
+
+<select id="correcta">
+  <option value="">Selecciona respuesta correcta</option>
+  <option value="A">Opción A</option>
+  <option value="B">Opción B</option>
+  <option value="C">Opción C</option>
+  <option value="D">Opción D</option>
+</select>
+
+<button onclick="guardarTrivia()">Guardar trivia</button>
+
+<div class="lista">
+  <b>Trivias registradas:</b>
+  <div id="listaTrivias"></div>
+</div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getFirestore, collection, addDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyAJnoku72zdNp4YpY5iMaNTRJXUb_GL2yk",
+  authDomain: "preguntas-3fb08.firebaseapp.com",
+  projectId: "preguntas-3fb08",
+  storageBucket: "preguntas-3fb08.firebasestorage.app",
+  messagingSenderId: "382488336682",
+  appId: "1:382488336682:web:a3adf0980215c50398a653",
+  measurementId: "G-99MYSVGX84"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+window.guardarTrivia = async function(){
+  const pregunta = document.getElementById("pregunta").value.trim();
+  const A = document.getElementById("opcionA").value.trim();
+  const B = document.getElementById("opcionB").value.trim();
+  const C = document.getElementById("opcionC").value.trim();
+  const D = document.getElementById("opcionD").value.trim();
+  const correcta = document.getElementById("correcta").value;
+
+  if(!pregunta || !A || !B || !C || !D || !correcta){
+    alert("Completa todos los campos.");
+    return;
+  }
+
+  await addDoc(collection(db, "trivias"), {
+    pregunta,
+    opciones:{A,B,C,D},
+    correcta,
+    fecha:new Date().toISOString()
+  });
+
+  alert("Trivia guardada.");
+  location.reload();
+};
+
+onSnapshot(collection(db, "trivias"), snapshot => {
+  let html = "";
+  snapshot.forEach(doc => {
+    html += `<div class="item">${doc.data().pregunta}</div>`;
+  });
+  document.getElementById("listaTrivias").innerHTML = html || "No hay trivias.";
+});
+</script>
+
+</body>
+</html>

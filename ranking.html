@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ranking Trivia</title>
+<style>
+*{box-sizing:border-box;}
+body{font-family:Arial;background:#f4f6f9;padding:15px;margin:0;}
+.contenedor{max-width:700px;margin:auto;background:white;padding:20px;border-radius:18px;box-shadow:0 0 20px #ccc;}
+h1{text-align:center;color:#003b7a;}
+.item{background:#f8fbff;border:1px solid #dcecff;padding:15px;margin:12px 0;border-radius:12px;font-weight:bold;}
+.boton-nav{display:inline-block;text-decoration:none;background:#003b7a;color:white;padding:12px 20px;border-radius:10px;font-weight:bold;}
+</style>
+</head>
+<body>
+
+<div class="contenedor">
+<h1>🏆 Ranking Trivia</h1>
+
+<div style="text-align:center;margin-bottom:20px;">
+  <a href="crear_trivia.html" class="boton-nav">➕ Crear Trivia</a>
+</div>
+
+<div id="ranking"></div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getFirestore, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyAJnoku72zdNp4YpY5iMaNTRJXUb_GL2yk",
+  authDomain: "preguntas-3fb08.firebaseapp.com",
+  projectId: "preguntas-3fb08",
+  storageBucket: "preguntas-3fb08.firebasestorage.app",
+  messagingSenderId: "382488336682",
+  appId: "1:382488336682:web:a3adf0980215c50398a653",
+  measurementId: "G-99MYSVGX84"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+onSnapshot(collection(db, "respuestas_trivia"), snapshot => {
+  let datos = [];
+
+  snapshot.forEach(doc => {
+    datos.push(doc.data());
+  });
+
+  datos.sort((a,b) => b.puntaje - a.puntaje);
+
+  let html = "";
+
+  datos.forEach((item, index) => {
+    let medalla = index === 0 ? "🥇" : index === 1 ? "🥈" : index === 2 ? "🥉" : "🔹";
+
+    html += `
+      <div class="item">
+        ${medalla} ${item.nombre} - ${item.puntaje}/${item.total} puntos
+      </div>
+    `;
+  });
+
+  document.getElementById("ranking").innerHTML = html || "Aún no hay respuestas.";
+});
+</script>
+
+</body>
+</html>
