@@ -11,12 +11,33 @@ input{width:100%;padding:12px;border:2px solid #0078d4;border-radius:8px;margin-
 button{margin-top:15px;padding:10px 18px;background:#f28c28;color:white;border:none;border-radius:8px;cursor:pointer;}
 .lista{margin-top:20px;background:#f1f7ff;padding:15px;border-radius:10px;}
 .item{padding:10px;border-bottom:1px solid #ddd;}
+
+.boton-nav{
+  text-decoration:none;
+  background:#003b7a;
+  color:white;
+  padding:12px 20px;
+  border-radius:10px;
+  font-weight:bold;
+  transition:0.3s;
+  display:inline-block;
+}
+
+.boton-nav:hover{
+  background:#f28c28;
+}
 </style>
 </head>
 <body>
 
 <div class="contenedor">
   <h1>Agregar Preguntas</h1>
+
+  <div style="text-align:center; margin-bottom:20px;">
+    <a href="resultados.html" class="boton-nav">
+      🏆 Ver Resultados
+    </a>
+  </div>
 
   <input type="text" id="pregunta" placeholder="Escribe la pregunta">
   <button onclick="agregarPregunta()">Agregar pregunta</button>
