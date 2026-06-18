@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Encuesta Laboral</title>
+
+<style>
+body{
+  font-family: Arial, sans-serif;
+  background:#f4f6f9;
+  margin:0;
+  padding:30px;
+}
+
+.contenedor{
+  max-width:700px;
+  margin:auto;
+  background:white;
+  padding:25px;
+  border-radius:15px;
+  box-shadow:0 0 15px rgba(0,0,0,0.1);
+}
+
+h1{
+  text-align:center;
+  color:#222;
+}
+
+.pregunta{
+  margin-top:25px;
+  padding:20px;
+  border:1px solid #ddd;
+  border-radius:12px;
+}
+
+.opcion{
+  display:block;
+  margin:10px 0;
+  font-size:16px;
+}
+
+button{
+  margin-top:15px;
+  padding:10px 18px;
+  background:#0078d4;
+  color:white;
+  border:none;
+  border-radius:8px;
+  cursor:pointer;
+}
+
+.resultados{
+  margin-top:15px;
+  background:#f1f1f1;
+  padding:12px;
+  border-radius:8px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="contenedor">
+  <h1>Encuesta Laboral</h1>
+  <div id="encuestas"></div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getDatabase, ref, onValue, runTransaction } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+/* PEGA AQUÍ TU CONFIGURACIÓN DE FIREBASE */
+const firebaseConfig = {
+  apiKey: "PEGAR_AQUI",
+  authDomain: "PEGAR_AQUI",
+  databaseURL: "PEGAR_AQUI",
+  projectId: "PEGAR_AQUI",
+  storageBucket: "PEGAR_AQUI",
+  messagingSenderId: "PEGAR_AQUI",
+  appId: "PEGAR_AQUI"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+
+/* AQUÍ EDITAS TUS PREGUNTAS Y NOMBRES */
+const preguntas = [
+  {
+    id: "trabajador",
+    texto: "¿Quién es el más trabajador?",
+    opciones: [
+      "Juan Pérez",
+      "María López",
+      "Carlos Torres",
+      "Ana Rojas"
+    ]
+  },
+  {
+    id: "puntual",
+    texto: "¿Quién es el más puntual?",
+    opciones: [
+      "Juan Pérez",
+      "María López",
+      "Carlos Torres",
+      "Ana Rojas"
+    ]
+  },
+  {
+    id: "compañerismo",
+    texto: "¿Quién demuestra más compañerismo?",
+    opciones: [
+      "Juan Pérez",
+      "María López",
+      "Carlos Torres",
+      "Ana Rojas"
+    ]
+  }
+];
+
+const contenedor = document.getElementById("encuestas");
+
+preguntas.forEach(pregunta => {
+  const div = document.createElement("div");
+  div.className = "pregunta";
+
+  div.innerHTML = `
+    <h2>${pregunta.texto}</h2>
+    <div>
+      ${pregunta.opciones.map(nombre => `
+        <label class="opcion">
+          <input type="radio" name="${pregunta.id}" value="${nombre}">
+          ${nombre}
+        </label>
+      `).join("")}
+    </div>
+
+    <button onclick="votar('${pregunta.id}')">Votar</button>
+
+    <div class="resultados" id="resultados-${pregunta.id}">
+      Cargando resultados...
+    </div>
+  `;
+
+  contenedor.appendChild(div);
+
+  escucharResultados(pregunta);
+});
+
+window.votar = function(idPregunta){
+  const seleccionado = document.querySelector(`input[name="${idPregunta}"]:checked`);
+
+  if(!seleccionado){
+    alert("Selecciona una opción.");
+    return;
+  }
+
+  const nombre = seleccionado.value;
+  const votoRef = ref(db, `votos/${idPregunta}/${nombre}`);
+
+  runTransaction(votoRef, (votosActuales) => {
+    return (votosActuales || 0) + 1;
+  });
+
+  alert("Voto registrado.");
+};
+
+function escucharResultados(pregunta){
+  const resultadosRef = ref(db, `votos/${pregunta.id}`);
+
+  onValue(resultadosRef, (snapshot) => {
+    const data = snapshot.val() || {};
+    const divResultados = document.getElementById(`resultados-${pregunta.id}`);
+
+    let html = "<b>Resultados en tiempo real:</b><br>";
+
+    pregunta.opciones.forEach(nombre => {
+      const cantidad = data[nombre] || 0;
+      html += `${nombre}: ${cantidad} votos<br>`;
+    });
+
+    divResultados.innerHTML = html;
+  });
+}
+</script>
+
+</body>
+</html>
