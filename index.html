@@ -2,16 +2,76 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Registro</title>
+
 <style>
-body{font-family:Arial;background:#f4f6f9;padding:30px;}
-.contenedor{max-width:500px;margin:auto;background:white;padding:30px;border-radius:18px;box-shadow:0 0 20px #ccc;}
-h1{text-align:center;color:#003b7a;}
-input{width:100%;padding:12px;border:2px solid #0078d4;border-radius:8px;}
-button{margin-top:15px;padding:12px 18px;background:#f28c28;color:white;border:none;border-radius:8px;cursor:pointer;}
-.mensaje{margin-top:15px;font-weight:bold;}
+*{
+  box-sizing:border-box;
+}
+
+body{
+  font-family:Arial;
+  background:#f4f6f9;
+  padding:15px;
+  margin:0;
+}
+
+.contenedor{
+  max-width:500px;
+  margin:auto;
+  background:white;
+  padding:20px;
+  border-radius:18px;
+  box-shadow:0 0 20px #ccc;
+}
+
+h1{
+  text-align:center;
+  color:#003b7a;
+}
+
+input{
+  width:100%;
+  padding:12px;
+  border:2px solid #0078d4;
+  border-radius:8px;
+  font-size:16px;
+}
+
+button{
+  margin-top:15px;
+  padding:12px 18px;
+  background:#f28c28;
+  color:white;
+  border:none;
+  border-radius:8px;
+  cursor:pointer;
+  font-weight:bold;
+  width:100%;
+}
+
+button:hover{
+  background:#003b7a;
+}
+
+.mensaje{
+  margin-top:15px;
+  font-weight:bold;
+}
+
+@media(max-width:600px){
+  h1{
+    font-size:24px;
+  }
+
+  .contenedor{
+    padding:15px;
+  }
+}
 </style>
 </head>
+
 <body>
 
 <div class="contenedor">
@@ -23,7 +83,12 @@ button{margin-top:15px;padding:12px 18px;background:#f28c28;color:white;border:n
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { 
+  getFirestore, 
+  doc, 
+  setDoc, 
+  getDoc 
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyAJnoku72zdNp4YpY5iMaNTRJXUb_GL2yk",
@@ -51,6 +116,7 @@ window.registrar = async function(){
 
   if(nombre === ""){
     mensaje.innerHTML = "⚠️ Escribe tu nombre.";
+    mensaje.style.color = "red";
     return;
   }
 
