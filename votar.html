@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Votar</title>
+<style>
+body{font-family:Arial;background:#f4f6f9;padding:30px;}
+.contenedor{max-width:800px;margin:auto;background:white;padding:30px;border-radius:18px;box-shadow:0 0 20px #ccc;}
+h1{text-align:center;color:#003b7a;}
+.usuario{background:#fff3e6;padding:12px;border-left:6px solid #f28c28;border-radius:8px;font-weight:bold;}
+.bloque{margin-top:25px;padding:20px;border:2px solid #f28c28;border-radius:14px;}
+button{margin-top:15px;padding:10px 18px;background:#0078d4;color:white;border:none;border-radius:8px;cursor:pointer;}
+.mensaje{margin-top:12px;font-weight:bold;}
+.ok{color:green;}
+.error{color:red;}
+</style>
+</head>
+<body>
+
+<div class="contenedor">
+  <h1>Encuesta Laboral</h1>
+  <div class="usuario" id="usuario"></div>
+  <div id="encuestas"></div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getFirestore, collection, onSnapshot, doc, runTransaction } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyAJnoku72zdNp4YpY5iMaNTRJXUb_GL2yk",
+  authDomain: "preguntas-3fb08.firebaseapp.com",
+  projectId: "preguntas-3fb08",
+  storageBucket: "preguntas-3fb08.firebasestorage.app",
+  messagingSenderId: "382488336682",
+  appId: "1:382488336682:web:a3adf0980215c50398a653",
+  measurementId: "G-99MYSVGX84"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+const votanteNombre = localStorage.getItem("votanteNombre");
+const votanteId = localStorage.getItem("votanteId");
+
+if(!votanteNombre || !votanteId){
+  window.location.href = "index.html";
+}
+
+document.getElementById("usuario").innerHTML = "Votando como: " + votanteNombre;
+
+const preguntas = [
+  { id: "trabajador", texto: "¿Quién es el más trabajador?" },
+  { id: "puntual", texto: "¿Quién es el más puntual?" },
+  { id: "responsable", texto: "¿Quién es el más responsable?" }
+];
+
+let trabajadores = [];
+
+onSnapshot(collection(db, "trabajadores"), (snapshot) => {
+  trabajadores = [];
+  snapshot.forEach(docSnap => trabajadores.push(docSnap.data().nombre));
+  trabajadores.sort();
+  mostrarPreguntas();
+});
+
+function mostrarPreguntas(){
+  const contenedor = document.getElementById("encuestas");
+  contenedor.innerHTML = "";
+
+  preguntas.forEach(pregunta => {
+    const div = document.createElement("div");
+    div.className = "bloque";
+
+    div.innerHTML = `
+      <h2>${pregunta.texto}</h2>
+
+      ${trabajadores.map(nombre => `
+        <label>
+          <input type="radio" name="${pregunta.id}" value="${nombre}">
+          ${nombre}
+        </label><br>
+      `).join("")}
+
+      <button onclick="votar('${pregunta.id}')">Votar</button>
+      <div id="mensaje-${pregunta.id}" class="mensaje"></div>
+    `;
+
+    contenedor.appendChild(div);
+  });
+}
+
+window.votar = async function(idPregunta){
+  const seleccionado = document.querySelector(`input[name="${idPregunta}"]:checked`);
+  const mensaje = document.getElementById(`mensaje-${idPregunta}`);
+
+  if(!seleccionado){
+    mensaje.innerHTML = "⚠️ Selecciona una opción.";
+    mensaje.className = "mensaje error";
+    return;
+  }
+
+  const nombreVotado = seleccionado.value;
+  const votoRef = doc(db, "votos", idPregunta);
+  const controlRef = doc(db, "control_votos", `${idPregunta}_${votanteId}`);
+
+  try{
+    await runTransaction(db, async (transaction) => {
+      const controlSnap = await transaction.get(controlRef);
+
+      if(controlSnap.exists()){
+        throw new Error("YA_VOTO");
+      }
+
+      const votoSnap = await transaction.get(votoRef);
+      let datos = votoSnap.exists() ? votoSnap.data() : {};
+
+      datos[nombreVotado] = (datos[nombreVotado] || 0) + 1;
+
+      transaction.set(votoRef, datos);
+      transaction.set(controlRef, {
+        votante: votanteNombre,
+        voto: nombreVotado,
+        pregunta: idPregunta,
+        fecha: new Date().toISOString()
+      });
+    });
+
+    mensaje.innerHTML = "✅ Voto registrado correctamente.";
+    mensaje.className = "mensaje ok";
+
+  }catch(error){
+    mensaje.innerHTML = "⚠️ Ya votaste en esta pregunta.";
+    mensaje.className = "mensaje error";
+  }
+};
+</script>
+
+</body>
+</html>
