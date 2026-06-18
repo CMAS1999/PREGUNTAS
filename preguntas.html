@@ -23,8 +23,23 @@ button{margin-top:15px;padding:10px 18px;background:#f28c28;color:white;border:n
   display:inline-block;
 }
 
-.boton-nav:hover{
-  background:#f28c28;
+.boton-nav:hover{background:#f28c28;}
+
+.zona-peligro{
+  margin-top:25px;
+  background:#fff0f0;
+  border:2px solid #d40000;
+  padding:15px;
+  border-radius:12px;
+}
+
+.btn-rojo{
+  background:#d40000;
+  width:100%;
+}
+
+.btn-rojo:hover{
+  background:#990000;
 }
 </style>
 </head>
@@ -46,12 +61,39 @@ button{margin-top:15px;padding:10px 18px;background:#f28c28;color:white;border:n
     <b>Preguntas registradas:</b>
     <div id="listaPreguntas"></div>
   </div>
+
+  <div class="zona-peligro">
+    <h3>Zona de limpieza</h3>
+
+    <button class="btn-rojo" onclick="eliminarPreguntas()">
+      🗑️ Eliminar todas las preguntas
+    </button>
+
+    <button class="btn-rojo" onclick="eliminarTrabajadores()">
+      🗑️ Eliminar todos los trabajadores
+    </button>
+
+    <button class="btn-rojo" onclick="eliminarVotos()">
+      🗑️ Reiniciar todos los votos
+    </button>
+
+    <button class="btn-rojo" onclick="eliminarTodo()">
+      ⚠️ Eliminar TODO
+    </button>
+  </div>
 </div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import {
-  getFirestore, doc, setDoc, getDoc, collection, onSnapshot
+  getFirestore,
+  doc,
+  setDoc,
+  getDoc,
+  collection,
+  onSnapshot,
+  getDocs,
+  deleteDoc
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -111,6 +153,66 @@ onSnapshot(collection(db, "preguntas"), (snapshot) => {
   document.getElementById("listaPreguntas").innerHTML =
     html || "<p>Aún no hay preguntas registradas.</p>";
 });
+
+async function borrarColeccion(nombreColeccion){
+  const querySnapshot = await getDocs(collection(db, nombreColeccion));
+
+  const promesas = [];
+
+  querySnapshot.forEach((documento) => {
+    promesas.push(deleteDoc(doc(db, nombreColeccion, documento.id)));
+  });
+
+  await Promise.all(promesas);
+}
+
+window.eliminarPreguntas = async function(){
+  if(!confirm("¿Seguro que deseas eliminar TODAS las preguntas?")){
+    return;
+  }
+
+  await borrarColeccion("preguntas");
+  await borrarColeccion("votos");
+  await borrarColeccion("control_votos");
+
+  alert("Preguntas y votos eliminados.");
+};
+
+window.eliminarTrabajadores = async function(){
+  if(!confirm("¿Seguro que deseas eliminar TODOS los trabajadores?")){
+    return;
+  }
+
+  await borrarColeccion("trabajadores");
+  await borrarColeccion("votos");
+  await borrarColeccion("control_votos");
+
+  alert("Trabajadores y votos eliminados.");
+};
+
+window.eliminarVotos = async function(){
+  if(!confirm("¿Seguro que deseas reiniciar TODOS los votos?")){
+    return;
+  }
+
+  await borrarColeccion("votos");
+  await borrarColeccion("control_votos");
+
+  alert("Votos reiniciados.");
+};
+
+window.eliminarTodo = async function(){
+  if(!confirm("⚠️ Esto eliminará preguntas, trabajadores y votos. ¿Continuar?")){
+    return;
+  }
+
+  await borrarColeccion("preguntas");
+  await borrarColeccion("trabajadores");
+  await borrarColeccion("votos");
+  await borrarColeccion("control_votos");
+
+  alert("Todo fue eliminado.");
+};
 </script>
 
 </body>
