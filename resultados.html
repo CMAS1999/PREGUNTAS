@@ -48,11 +48,20 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-const preguntas = [
-  { id: "trabajador", texto: "¿Quién es el más trabajador?" },
-  { id: "puntual", texto: "¿Quién es el más puntual?" },
-  { id: "responsable", texto: "¿Quién es el más responsable?" }
-];
+let preguntas = [];
+
+onSnapshot(collection(db, "preguntas"), (snapshot) => {
+  preguntas = [];
+
+  snapshot.forEach(docSnap => {
+    preguntas.push({
+      id: docSnap.id,
+      texto: docSnap.data().texto
+    });
+  });
+
+  cargarResultados();
+});
 
 let trabajadores = [];
 
