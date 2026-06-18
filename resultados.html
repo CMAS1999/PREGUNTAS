@@ -13,50 +13,80 @@ body{
 }
 
 .contenedor{
-  max-width:800px;
+  max-width:850px;
   margin:auto;
   background:white;
-  padding:25px;
-  border-radius:15px;
-  box-shadow:0 0 15px rgba(0,0,0,0.1);
+  padding:30px;
+  border-radius:18px;
+  box-shadow:0 0 20px rgba(0,0,0,0.12);
 }
 
 h1{
   text-align:center;
+  color:#003b7a;
+  margin-bottom:30px;
 }
 
 .pregunta{
   margin-top:25px;
-  padding:20px;
-  border:1px solid #ddd;
-  border-radius:12px;
+  padding:25px;
+  border:2px solid #f28c28;
+  border-radius:16px;
+  background:#fff;
 }
 
-.resultado-item{
-  margin-bottom:15px;
+.pregunta h2{
+  color:#003b7a;
+}
+
+.ganador{
+  background:#fff3e6;
+  color:#003b7a;
+  padding:12px;
+  border-radius:10px;
+  margin-bottom:18px;
+  font-weight:bold;
+  border-left:6px solid #f28c28;
+}
+
+.top-card{
+  margin:15px 0;
+  padding:15px;
+  border-radius:14px;
+  background:#f8fbff;
+  border:1px solid #dcecff;
+}
+
+.top-card h3{
+  margin:0 0 8px;
+  color:#003b7a;
+}
+
+.votos{
+  font-weight:bold;
+  color:#f28c28;
 }
 
 .barra{
   background:#ddd;
-  border-radius:8px;
+  border-radius:10px;
   overflow:hidden;
-  margin-top:5px;
+  margin-top:8px;
 }
 
 .progreso{
-  background:#0078d4;
+  background:linear-gradient(90deg, #f28c28, #0078d4);
   color:white;
-  padding:6px;
+  padding:7px;
   width:0%;
   font-size:13px;
+  font-weight:bold;
 }
 
-.ganador{
-  background:#e8f4ff;
-  padding:10px;
-  border-radius:8px;
-  margin-bottom:15px;
+.total{
+  margin-top:18px;
   font-weight:bold;
+  color:#003b7a;
 }
 </style>
 </head>
@@ -64,7 +94,7 @@ h1{
 <body>
 
 <div class="contenedor">
-  <h1>Resultados en Tiempo Real</h1>
+  <h1>🏆 Resultados en Tiempo Real</h1>
   <div id="resultados"></div>
 </div>
 
@@ -144,30 +174,46 @@ function escucharResultados(pregunta){
 
     ranking.sort((a, b) => b.votos - a.votos);
 
-    let ganador = ranking[0];
+    const top3 = ranking.slice(0, 3);
 
     let html = `<h2>${pregunta.texto}</h2>`;
 
     if(total > 0){
       html += `
         <div class="ganador">
-          🥇 Va ganando: ${ganador.nombre} con ${ganador.votos} votos
+          🏆 Ganador actual: ${top3[0].nombre} con ${top3[0].votos} votos
         </div>
       `;
     } else {
       html += `
         <div class="ganador">
-          Aún no hay votos.
+          Aún no hay votos registrados.
         </div>
       `;
     }
 
-    ranking.forEach(item => {
+    top3.forEach((item, index) => {
       const porcentaje = total > 0 ? Math.round((item.votos / total) * 100) : 0;
 
+      let medalla = "🥇";
+      let puesto = "Primer lugar";
+
+      if(index === 1){
+        medalla = "🥈";
+        puesto = "Segundo lugar";
+      }
+
+      if(index === 2){
+        medalla = "🥉";
+        puesto = "Tercer lugar";
+      }
+
       html += `
-        <div class="resultado-item">
-          <b>${item.nombre}</b>: ${item.votos} votos (${porcentaje}%)
+        <div class="top-card">
+          <h3>${medalla} ${puesto}</h3>
+          <div><b>${item.nombre}</b></div>
+          <div class="votos">${item.votos} votos (${porcentaje}%)</div>
+
           <div class="barra">
             <div class="progreso" style="width:${porcentaje}%">
               ${porcentaje}%
@@ -177,7 +223,7 @@ function escucharResultados(pregunta){
       `;
     });
 
-    html += `<b>Total de votos:</b> ${total}`;
+    html += `<div class="total">Total de votos: ${total}</div>`;
 
     document.getElementById(`pregunta-${pregunta.id}`).innerHTML = html;
   });
