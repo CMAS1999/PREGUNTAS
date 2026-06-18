@@ -16,20 +16,51 @@ body{
   max-width:750px;
   margin:auto;
   background:white;
-  padding:25px;
-  border-radius:15px;
-  box-shadow:0 0 15px rgba(0,0,0,0.1);
+  padding:30px;
+  border-radius:18px;
+  box-shadow:0 0 20px rgba(0,0,0,0.12);
 }
 
 h1{
   text-align:center;
+  color:#003b7a;
+}
+
+.login{
+  text-align:center;
+  margin-top:20px;
+}
+
+input[type="text"]{
+  width:90%;
+  padding:12px;
+  border:2px solid #0078d4;
+  border-radius:10px;
+  font-size:16px;
+}
+
+.lista{
+  margin-top:15px;
+}
+
+.item{
+  padding:12px;
+  margin:8px 0;
+  border-radius:10px;
+  background:#f1f7ff;
+  cursor:pointer;
+  border:1px solid #cfe5ff;
+}
+
+.item:hover{
+  background:#ffe8d1;
 }
 
 .pregunta{
   margin-top:25px;
   padding:20px;
-  border:1px solid #ddd;
-  border-radius:12px;
+  border:2px solid #f28c28;
+  border-radius:14px;
 }
 
 .opcion{
@@ -56,6 +87,19 @@ button:hover{
   font-weight:bold;
   color:green;
 }
+
+.oculto{
+  display:none;
+}
+
+.usuario{
+  background:#fff3e6;
+  padding:12px;
+  border-radius:10px;
+  color:#003b7a;
+  font-weight:bold;
+  border-left:6px solid #f28c28;
+}
 </style>
 </head>
 
@@ -63,7 +107,17 @@ button:hover{
 
 <div class="contenedor">
   <h1>Encuesta Laboral</h1>
-  <div id="encuestas"></div>
+
+  <div id="login" class="login">
+    <h2>Busca tu nombre para votar</h2>
+    <input type="text" id="buscador" placeholder="Escribe tu nombre...">
+    <div id="listaNombres" class="lista"></div>
+  </div>
+
+  <div id="zonaEncuesta" class="oculto">
+    <div class="usuario" id="usuarioSeleccionado"></div>
+    <div id="encuestas"></div>
+  </div>
 </div>
 
 <script type="module">
@@ -87,53 +141,104 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-/* AQUÍ EDITAS TUS PREGUNTAS Y NOMBRES */
+/* AQUÍ COLOCAS LOS TRABAJADORES */
+const trabajadores = [
+  "Juan Pérez",
+  "María López",
+  "Carlos Torres",
+  "Ana Rojas"
+];
+
+/* AQUÍ COLOCAS LAS PREGUNTAS */
 const preguntas = [
   {
     id: "trabajador",
     texto: "¿Quién es el más trabajador?",
-    opciones: [
-      "Juan Pérez",
-      "María López",
-      "Carlos Torres",
-      "Ana Rojas"
-    ]
+    opciones: trabajadores
   },
   {
     id: "puntual",
     texto: "¿Quién es el más puntual?",
-    opciones: [
-      "Juan Pérez",
-      "María López",
-      "Carlos Torres",
-      "Ana Rojas"
-    ]
+    opciones: trabajadores
   }
 ];
 
+let votanteActual = "";
+
+const buscador = document.getElementById("buscador");
+const listaNombres = document.getElementById("listaNombres");
+const login = document.getElementById("login");
+const zonaEncuesta = document.getElementById("zonaEncuesta");
+const usuarioSeleccionado = document.getElementById("usuarioSeleccionado");
 const contenedor = document.getElementById("encuestas");
 
-preguntas.forEach(pregunta => {
-  const div = document.createElement("div");
-  div.className = "pregunta";
+buscador.addEventListener("input", () => {
+  const texto = buscador.value.toLowerCase();
+  listaNombres.innerHTML = "";
 
-  div.innerHTML = `
-    <h2>${pregunta.texto}</h2>
+  if(texto.length < 1) return;
 
-    ${pregunta.opciones.map(nombre => `
-      <label class="opcion">
-        <input type="radio" name="${pregunta.id}" value="${nombre}">
-        ${nombre}
-      </label>
-    `).join("")}
+  const filtrados = trabajadores.filter(nombre =>
+    nombre.toLowerCase().includes(texto)
+  );
 
-    <button onclick="votar('${pregunta.id}')">Votar</button>
-
-    <div class="mensaje" id="mensaje-${pregunta.id}"></div>
-  `;
-
-  contenedor.appendChild(div);
+  filtrados.forEach(nombre => {
+    const div = document.createElement("div");
+    div.className = "item";
+    div.textContent = nombre;
+    div.onclick = () => seleccionarVotante(nombre);
+    listaNombres.appendChild(div);
+  });
 });
+
+function seleccionarVotante(nombre){
+  votanteActual = nombre;
+
+  login.classList.add("oculto");
+  zonaEncuesta.classList.remove("oculto");
+
+  usuarioSeleccionado.innerHTML = `Bienvenido/a: ${nombre}`;
+
+  mostrarPreguntas();
+}
+
+function limpiarTexto(texto){
+  return texto
+    .toLowerCase()
+    .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+    .replace(/\s+/g, "_")
+    .replace(/[^a-z0-9_]/g, "");
+}
+
+function mostrarPreguntas(){
+  contenedor.innerHTML = "";
+
+  preguntas.forEach(pregunta => {
+    const div = document.createElement("div");
+    div.className = "pregunta";
+
+    div.innerHTML = `
+      <h2>${pregunta.texto}</h2>
+
+      ${pregunta.opciones.map(nombre => {
+        if(nombre === votanteActual) return "";
+
+        return `
+          <label class="opcion">
+            <input type="radio" name="${pregunta.id}" value="${nombre}">
+            ${nombre}
+          </label>
+        `;
+      }).join("")}
+
+      <button onclick="votar('${pregunta.id}')">Votar</button>
+
+      <div class="mensaje" id="mensaje-${pregunta.id}"></div>
+    `;
+
+    contenedor.appendChild(div);
+  });
+}
 
 window.votar = async function(idPregunta){
   const seleccionado = document.querySelector(`input[name="${idPregunta}"]:checked`);
@@ -143,25 +248,52 @@ window.votar = async function(idPregunta){
     return;
   }
 
-  const nombre = seleccionado.value;
-  const preguntaRef = doc(db, "votos", idPregunta);
+  const nombreVotado = seleccionado.value;
+  const idVotante = limpiarTexto(votanteActual);
 
-  await runTransaction(db, async (transaction) => {
-    const docSnap = await transaction.get(preguntaRef);
+  const votoRef = doc(db, "votos", idPregunta);
+  const controlRef = doc(db, "control_votos", `${idPregunta}_${idVotante}`);
 
-    let datos = {};
+  try{
+    await runTransaction(db, async (transaction) => {
+      const controlSnap = await transaction.get(controlRef);
 
-    if(docSnap.exists()){
-      datos = docSnap.data();
+      if(controlSnap.exists()){
+        throw new Error("YA_VOTO");
+      }
+
+      const votoSnap = await transaction.get(votoRef);
+
+      let datos = {};
+
+      if(votoSnap.exists()){
+        datos = votoSnap.data();
+      }
+
+      datos[nombreVotado] = (datos[nombreVotado] || 0) + 1;
+
+      transaction.set(votoRef, datos);
+
+      transaction.set(controlRef, {
+        votante: votanteActual,
+        voto: nombreVotado,
+        pregunta: idPregunta,
+        fecha: new Date().toISOString()
+      });
+    });
+
+    document.getElementById(`mensaje-${idPregunta}`).innerHTML =
+      "✅ Voto registrado correctamente.";
+
+  }catch(error){
+    if(error.message === "YA_VOTO"){
+      document.getElementById(`mensaje-${idPregunta}`).innerHTML =
+        "⚠️ Ya votaste en esta pregunta.";
+    }else{
+      alert("Error al registrar el voto.");
+      console.error(error);
     }
-
-    datos[nombre] = (datos[nombre] || 0) + 1;
-
-    transaction.set(preguntaRef, datos);
-  });
-
-  document.getElementById(`mensaje-${idPregunta}`).innerHTML =
-    "✅ Voto registrado correctamente.";
+  }
 };
 </script>
 
