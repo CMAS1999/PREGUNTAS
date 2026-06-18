@@ -59,11 +59,20 @@ if(!votanteNombre || !votanteId){
 
 document.getElementById("usuario").innerHTML = "Votando como: " + votanteNombre;
 
-const preguntas = [
-  { id: "trabajador", texto: "¿Quién es el más trabajador?" },
-  { id: "puntual", texto: "¿Quién es el más puntual?" },
-  { id: "responsable", texto: "¿Quién es el más responsable?" }
-];
+let preguntas = [];
+
+onSnapshot(collection(db, "preguntas"), (snapshot) => {
+  preguntas = [];
+
+  snapshot.forEach(docSnap => {
+    preguntas.push({
+      id: docSnap.id,
+      texto: docSnap.data().texto
+    });
+  });
+
+  mostrarPreguntas();
+});
 
 let trabajadores = [];
 
