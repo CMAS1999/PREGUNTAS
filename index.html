@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <title>Encuesta Laboral</title>
+
 <style>
 body{
   font-family: Arial, sans-serif;
@@ -10,6 +11,7 @@ body{
   margin:0;
   padding:30px;
 }
+
 .contenedor{
   max-width:750px;
   margin:auto;
@@ -18,17 +20,23 @@ body{
   border-radius:15px;
   box-shadow:0 0 15px rgba(0,0,0,0.1);
 }
-h1{text-align:center;}
+
+h1{
+  text-align:center;
+}
+
 .pregunta{
   margin-top:25px;
   padding:20px;
   border:1px solid #ddd;
   border-radius:12px;
 }
+
 .opcion{
   display:block;
   margin:10px 0;
 }
+
 button{
   margin-top:15px;
   padding:10px 18px;
@@ -38,24 +46,15 @@ button{
   border-radius:8px;
   cursor:pointer;
 }
-.resultados{
+
+button:hover{
+  background:#005fa3;
+}
+
+.mensaje{
   margin-top:15px;
-  background:#f1f1f1;
-  padding:12px;
-  border-radius:8px;
-}
-.barra{
-  background:#ddd;
-  border-radius:8px;
-  overflow:hidden;
-  margin:5px 0 12px;
-}
-.progreso{
-  background:#0078d4;
-  color:white;
-  padding:5px;
-  width:0%;
-  font-size:13px;
+  font-weight:bold;
+  color:green;
 }
 </style>
 </head>
@@ -72,11 +71,9 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/fireba
 import {
   getFirestore,
   doc,
-  onSnapshot,
   runTransaction
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-/* TU CONFIGURACIÓN DE FIREBASE */
 const firebaseConfig = {
   apiKey: "AIzaSyAJnoku72zdNp4YpY5iMaNTRJXUb_GL2yk",
   authDomain: "preguntas-3fb08.firebaseapp.com",
@@ -132,13 +129,10 @@ preguntas.forEach(pregunta => {
 
     <button onclick="votar('${pregunta.id}')">Votar</button>
 
-    <div class="resultados" id="resultados-${pregunta.id}">
-      Cargando resultados...
-    </div>
+    <div class="mensaje" id="mensaje-${pregunta.id}"></div>
   `;
 
   contenedor.appendChild(div);
-  escucharResultados(pregunta);
 });
 
 window.votar = async function(idPregunta){
@@ -161,49 +155,14 @@ window.votar = async function(idPregunta){
       datos = docSnap.data();
     }
 
-    const votosActuales = datos[nombre] || 0;
-    datos[nombre] = votosActuales + 1;
+    datos[nombre] = (datos[nombre] || 0) + 1;
 
     transaction.set(preguntaRef, datos);
   });
 
-  alert("Voto registrado correctamente.");
+  document.getElementById(`mensaje-${idPregunta}`).innerHTML =
+    "✅ Voto registrado correctamente.";
 };
-
-function escucharResultados(pregunta){
-  const preguntaRef = doc(db, "votos", pregunta.id);
-
-  onSnapshot(preguntaRef, (docSnap) => {
-    const data = docSnap.exists() ? docSnap.data() : {};
-    const divResultados = document.getElementById(`resultados-${pregunta.id}`);
-
-    let total = 0;
-
-    pregunta.opciones.forEach(nombre => {
-      total += data[nombre] || 0;
-    });
-
-    let html = "<b>Resultados en tiempo real:</b><br><br>";
-
-    pregunta.opciones.forEach(nombre => {
-      const votos = data[nombre] || 0;
-      const porcentaje = total > 0 ? Math.round((votos / total) * 100) : 0;
-
-      html += `
-        <b>${nombre}</b>: ${votos} votos (${porcentaje}%)
-        <div class="barra">
-          <div class="progreso" style="width:${porcentaje}%">
-            ${porcentaje}%
-          </div>
-        </div>
-      `;
-    });
-
-    html += `<b>Total de votos:</b> ${total}`;
-
-    divResultados.innerHTML = html;
-  });
-}
 </script>
 
 </body>
