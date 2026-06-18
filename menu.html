@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Menú</title>
+
+<style>
+*{box-sizing:border-box;}
+
+body{
+  font-family:Arial;
+  background:#f4f6f9;
+  padding:15px;
+  margin:0;
+}
+
+.contenedor{
+  max-width:500px;
+  margin:auto;
+  background:white;
+  padding:25px;
+  border-radius:18px;
+  box-shadow:0 0 20px #ccc;
+  text-align:center;
+}
+
+h1{
+  color:#003b7a;
+}
+
+.usuario{
+  background:#fff3e6;
+  padding:12px;
+  border-left:6px solid #f28c28;
+  border-radius:8px;
+  margin-bottom:20px;
+  font-weight:bold;
+  color:#003b7a;
+}
+
+.opcion{
+  display:block;
+  text-decoration:none;
+  margin:15px 0;
+  padding:18px;
+  border-radius:14px;
+  font-weight:bold;
+  font-size:18px;
+  color:white;
+}
+
+.encuesta{
+  background:#0078d4;
+}
+
+.trivia{
+  background:#f28c28;
+}
+
+.opcion:hover{
+  opacity:0.85;
+}
+</style>
+</head>
+
+<body>
+
+<div class="contenedor">
+  <h1>¿A dónde quieres ingresar?</h1>
+
+  <div class="usuario" id="usuario"></div>
+
+  <a href="votar.html" class="opcion encuesta">
+    🗳️ Encuesta de trabajadores
+  </a>
+
+  <a href="trivia.html" class="opcion trivia">
+    🧠 Trivia
+  </a>
+</div>
+
+<script>
+const nombre = localStorage.getItem("votanteNombre");
+
+if(!nombre){
+  window.location.href = "index.html";
+}
+
+document.getElementById("usuario").innerHTML = "Bienvenido/a: " + nombre;
+</script>
+
+</body>
+</html>
