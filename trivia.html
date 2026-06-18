@@ -13,6 +13,8 @@ h1{text-align:center;color:#003b7a;}
 .pregunta{margin-top:20px;padding:20px;border:2px solid #f28c28;border-radius:14px;}
 .opcion{padding:10px;background:#f8fbff;border-radius:8px;margin:8px 0;}
 button{margin-top:15px;padding:12px;background:#0078d4;color:white;border:none;border-radius:8px;cursor:pointer;width:100%;font-weight:bold;}
+.ok{color:green;font-weight:bold;}
+.error{color:red;font-weight:bold;}
 </style>
 </head>
 <body>
@@ -27,7 +29,14 @@ button{margin-top:15px;padding:12px;background:#0078d4;color:white;border:none;b
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getFirestore, collection, onSnapshot, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import {
+  getFirestore,
+  collection,
+  onSnapshot,
+  doc,
+  getDoc,
+  setDoc
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyAJnoku72zdNp4YpY5iMaNTRJXUb_GL2yk",
@@ -45,19 +54,41 @@ const db = getFirestore(app);
 const nombre = localStorage.getItem("votanteNombre");
 const id = localStorage.getItem("votanteId");
 
-if(!nombre || !id){ window.location.href = "index.html"; }
+if(!nombre || !id){
+  window.location.href = "index.html";
+}
 
 document.getElementById("usuario").innerHTML = "Participante: " + nombre;
 
 let trivias = [];
+let respondidas = {};
 
-onSnapshot(collection(db, "trivias"), snapshot => {
+onSnapshot(collection(db, "trivias"), async snapshot => {
   trivias = [];
+
   snapshot.forEach(docSnap => {
-    trivias.push({id:docSnap.id, ...docSnap.data()});
+    trivias.push({
+      id: docSnap.id,
+      ...docSnap.data()
+    });
   });
+
+  await cargarRespondidas();
   mostrarTrivias();
 });
+
+async function cargarRespondidas(){
+  respondidas = {};
+
+  for(const trivia of trivias){
+    const respuestaRef = doc(db, "respuestas_trivia", `${id}_${trivia.id}`);
+    const respuestaSnap = await getDoc(respuestaRef);
+
+    if(respuestaSnap.exists()){
+      respondidas[trivia.id] = true;
+    }
+  }
+}
 
 function mostrarTrivias(){
   const contenedor = document.getElementById("trivias");
@@ -69,51 +100,75 @@ function mostrarTrivias(){
   }
 
   trivias.forEach((t, index) => {
+    const yaRespondio = respondidas[t.id];
+
     contenedor.innerHTML += `
       <div class="pregunta">
         <h3>${index + 1}. ${t.pregunta}</h3>
 
-        ${["A","B","C","D"].map(letra => `
-          <div class="opcion">
-            <label>
-              <input type="radio" name="${t.id}" value="${letra}">
-              ${letra}) ${t.opciones[letra]}
-            </label>
-          </div>
-        `).join("")}
+        ${
+          yaRespondio
+          ? `<p class="ok">✅ Ya respondiste esta pregunta.</p>`
+          : ["A","B","C","D"].map(letra => `
+              <div class="opcion">
+                <label>
+                  <input type="radio" name="${t.id}" value="${letra}">
+                  ${letra}) ${t.opciones[letra]}
+                </label>
+              </div>
+            `).join("")
+        }
       </div>
     `;
   });
 }
 
 window.enviarRespuestas = async function(){
-  const refRespuesta = doc(db, "respuestas_trivia", id);
-  const existe = await getDoc(refRespuesta);
+  let nuevasRespondidas = 0;
+  let correctas = 0;
 
-  if(existe.exists()){
-    alert("Ya respondiste la trivia.");
+  for(const t of trivias){
+    if(respondidas[t.id]){
+      continue;
+    }
+
+    const seleccionado = document.querySelector(`input[name="${t.id}"]:checked`);
+
+    if(!seleccionado){
+      continue;
+    }
+
+    const esCorrecta = seleccionado.value === t.correcta;
+
+    if(esCorrecta){
+      correctas++;
+    }
+
+    await setDoc(doc(db, "respuestas_trivia", `${id}_${t.id}`), {
+      participanteId: id,
+      nombre: nombre,
+      triviaId: t.id,
+      pregunta: t.pregunta,
+      respuesta: seleccionado.value,
+      correcta: t.correcta,
+      acierto: esCorrecta ? 1 : 0,
+      fecha: new Date().toISOString()
+    });
+
+    nuevasRespondidas++;
+  }
+
+  if(nuevasRespondidas === 0){
+    document.getElementById("resultado").innerHTML =
+      `<p class="error">⚠️ No seleccionaste ninguna pregunta nueva.</p>`;
     return;
   }
 
-  let puntaje = 0;
-
-  for(const t of trivias){
-    const seleccionado = document.querySelector(`input[name="${t.id}"]:checked`);
-
-    if(seleccionado && seleccionado.value === t.correcta){
-      puntaje++;
-    }
-  }
-
-  await setDoc(refRespuesta, {
-    nombre,
-    puntaje,
-    total: trivias.length,
-    fecha:new Date().toISOString()
-  });
-
   document.getElementById("resultado").innerHTML =
-    `<h2>Tu puntaje: ${puntaje} / ${trivias.length}</h2>`;
+    `<h2>Respondiste ${nuevasRespondidas} pregunta(s). Correctas: ${correctas}</h2>`;
+
+  await cargarRespondidas();
+  mostrarTrivias();
 };
 </script>
 
