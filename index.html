@@ -2,125 +2,28 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<title>Encuesta Laboral</title>
-
+<title>Registro</title>
 <style>
-body{
-  font-family: Arial, sans-serif;
-  background:#f4f6f9;
-  margin:0;
-  padding:30px;
-}
-
-.contenedor{
-  max-width:800px;
-  margin:auto;
-  background:white;
-  padding:30px;
-  border-radius:18px;
-  box-shadow:0 0 20px rgba(0,0,0,0.12);
-}
-
-h1{
-  text-align:center;
-  color:#003b7a;
-}
-
-.bloque{
-  margin-top:25px;
-  padding:20px;
-  border:2px solid #f28c28;
-  border-radius:14px;
-}
-
-input, select{
-  width:100%;
-  padding:12px;
-  margin-top:8px;
-  border:2px solid #0078d4;
-  border-radius:8px;
-  font-size:15px;
-}
-
-button{
-  margin-top:15px;
-  padding:10px 18px;
-  background:#0078d4;
-  color:white;
-  border:none;
-  border-radius:8px;
-  cursor:pointer;
-}
-
-button:hover{
-  background:#005fa3;
-}
-
-.lista{
-  margin-top:15px;
-  background:#f1f7ff;
-  padding:12px;
-  border-radius:10px;
-}
-
-.item{
-  padding:7px;
-  border-bottom:1px solid #ddd;
-}
-
-.mensaje{
-  margin-top:12px;
-  font-weight:bold;
-}
-
-.ok{
-  color:green;
-}
-
-.error{
-  color:red;
-}
+body{font-family:Arial;background:#f4f6f9;padding:30px;}
+.contenedor{max-width:500px;margin:auto;background:white;padding:30px;border-radius:18px;box-shadow:0 0 20px #ccc;}
+h1{text-align:center;color:#003b7a;}
+input{width:100%;padding:12px;border:2px solid #0078d4;border-radius:8px;}
+button{margin-top:15px;padding:12px 18px;background:#f28c28;color:white;border:none;border-radius:8px;cursor:pointer;}
+.mensaje{margin-top:15px;font-weight:bold;}
 </style>
 </head>
-
 <body>
 
 <div class="contenedor">
-  <h1>Encuesta Laboral</h1>
-
-  <div class="bloque">
-    <h2>1. Registrar trabajador</h2>
-    <input type="text" id="nombreTrabajador" placeholder="Escribe el nombre del trabajador">
-    <button onclick="registrarTrabajador()">Agregar trabajador</button>
-    <div id="mensajeRegistro" class="mensaje"></div>
-
-    <div class="lista">
-      <b>Trabajadores registrados:</b>
-      <div id="listaTrabajadores"></div>
-    </div>
-  </div>
-
-  <div class="bloque">
-    <h2>2. Selecciona tu nombre para votar</h2>
-    <select id="votante">
-      <option value="">Selecciona tu nombre</option>
-    </select>
-  </div>
-
-  <div id="encuestas"></div>
+  <h1>Registro de Trabajador</h1>
+  <input type="text" id="nombre" placeholder="Escribe tu nombre completo">
+  <button onclick="registrar()">Registrarme y votar</button>
+  <div id="mensaje" class="mensaje"></div>
 </div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import {
-  getFirestore,
-  doc,
-  setDoc,
-  getDoc,
-  collection,
-  onSnapshot,
-  runTransaction
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyAJnoku72zdNp4YpY5iMaNTRJXUb_GL2yk",
@@ -135,197 +38,37 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-let trabajadores = [];
-
-const preguntas = [
-  {
-    id: "trabajador",
-    texto: "¿Quién es el más trabajador?"
-  },
-  {
-    id: "puntual",
-    texto: "¿Quién es el más puntual?"
-  },
-  {
-    id: "responsable",
-    texto: "¿Quién es el más responsable?"
-  }
-];
-
 function limpiarTexto(texto){
-  return texto
-    .trim()
-    .toLowerCase()
-    .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
-    .replace(/\s+/g, "_")
-    .replace(/[^a-z0-9_]/g, "");
+  return texto.trim().toLowerCase()
+    .normalize("NFD").replace(/[\u0300-\u036f]/g,"")
+    .replace(/\s+/g,"_")
+    .replace(/[^a-z0-9_]/g,"");
 }
 
-window.registrarTrabajador = async function(){
-  const input = document.getElementById("nombreTrabajador");
-  const mensaje = document.getElementById("mensajeRegistro");
-  const nombre = input.value.trim();
+window.registrar = async function(){
+  const nombre = document.getElementById("nombre").value.trim();
+  const mensaje = document.getElementById("mensaje");
 
   if(nombre === ""){
-    mensaje.innerHTML = "⚠️ Escribe un nombre.";
-    mensaje.className = "mensaje error";
+    mensaje.innerHTML = "⚠️ Escribe tu nombre.";
     return;
   }
 
   const id = limpiarTexto(nombre);
-  const trabajadorRef = doc(db, "trabajadores", id);
-  const existe = await getDoc(trabajadorRef);
+  const refTrabajador = doc(db, "trabajadores", id);
+  const existe = await getDoc(refTrabajador);
 
-  if(existe.exists()){
-    mensaje.innerHTML = "⚠️ Este trabajador ya está registrado.";
-    mensaje.className = "mensaje error";
-    return;
-  }
-
-  await setDoc(trabajadorRef, {
-    nombre: nombre,
-    fecha: new Date().toISOString()
-  });
-
-  input.value = "";
-  mensaje.innerHTML = "✅ Trabajador registrado correctamente.";
-  mensaje.className = "mensaje ok";
-};
-
-onSnapshot(collection(db, "trabajadores"), (snapshot) => {
-  trabajadores = [];
-
-  snapshot.forEach(docSnap => {
-    trabajadores.push(docSnap.data().nombre);
-  });
-
-  trabajadores.sort();
-
-  actualizarListaTrabajadores();
-  actualizarSelectVotante();
-  mostrarPreguntas();
-});
-
-function actualizarListaTrabajadores(){
-  const lista = document.getElementById("listaTrabajadores");
-
-  if(trabajadores.length === 0){
-    lista.innerHTML = "<p>Aún no hay trabajadores registrados.</p>";
-    return;
-  }
-
-  lista.innerHTML = trabajadores.map(nombre => `
-    <div class="item">${nombre}</div>
-  `).join("");
-}
-
-function actualizarSelectVotante(){
-  const select = document.getElementById("votante");
-  const valorActual = select.value;
-
-  select.innerHTML = `<option value="">Selecciona tu nombre</option>`;
-
-  trabajadores.forEach(nombre => {
-    select.innerHTML += `<option value="${nombre}">${nombre}</option>`;
-  });
-
-  select.value = valorActual;
-}
-
-function mostrarPreguntas(){
-  const contenedor = document.getElementById("encuestas");
-  contenedor.innerHTML = "";
-
-  if(trabajadores.length === 0){
-    return;
-  }
-
-  preguntas.forEach(pregunta => {
-    const div = document.createElement("div");
-    div.className = "bloque";
-
-    div.innerHTML = `
-      <h2>${pregunta.texto}</h2>
-
-      ${trabajadores.map(nombre => `
-        <label>
-          <input type="radio" name="${pregunta.id}" value="${nombre}">
-          ${nombre}
-        </label><br>
-      `).join("")}
-
-      <button onclick="votar('${pregunta.id}')">Votar</button>
-      <div id="mensaje-${pregunta.id}" class="mensaje"></div>
-    `;
-
-    contenedor.appendChild(div);
-  });
-}
-
-window.votar = async function(idPregunta){
-  const votante = document.getElementById("votante").value;
-  const seleccionado = document.querySelector(`input[name="${idPregunta}"]:checked`);
-  const mensaje = document.getElementById(`mensaje-${idPregunta}`);
-
-  if(votante === ""){
-    mensaje.innerHTML = "⚠️ Primero selecciona tu nombre.";
-    mensaje.className = "mensaje error";
-    return;
-  }
-
-  if(!seleccionado){
-    mensaje.innerHTML = "⚠️ Selecciona una opción.";
-    mensaje.className = "mensaje error";
-    return;
-  }
-
-  const nombreVotado = seleccionado.value;
-  const idVotante = limpiarTexto(votante);
-
-  const votoRef = doc(db, "votos", idPregunta);
-  const controlRef = doc(db, "control_votos", `${idPregunta}_${idVotante}`);
-
-  try{
-    await runTransaction(db, async (transaction) => {
-      const controlSnap = await transaction.get(controlRef);
-
-      if(controlSnap.exists()){
-        throw new Error("YA_VOTO");
-      }
-
-      const votoSnap = await transaction.get(votoRef);
-
-      let datos = {};
-
-      if(votoSnap.exists()){
-        datos = votoSnap.data();
-      }
-
-      datos[nombreVotado] = (datos[nombreVotado] || 0) + 1;
-
-      transaction.set(votoRef, datos);
-
-      transaction.set(controlRef, {
-        votante: votante,
-        voto: nombreVotado,
-        pregunta: idPregunta,
-        fecha: new Date().toISOString()
-      });
+  if(!existe.exists()){
+    await setDoc(refTrabajador, {
+      nombre: nombre,
+      fecha: new Date().toISOString()
     });
-
-    mensaje.innerHTML = "✅ Voto registrado correctamente.";
-    mensaje.className = "mensaje ok";
-
-  }catch(error){
-    if(error.message === "YA_VOTO"){
-      mensaje.innerHTML = "⚠️ Ya votaste en esta pregunta.";
-      mensaje.className = "mensaje error";
-    }else{
-      mensaje.innerHTML = "❌ Error al registrar el voto.";
-      mensaje.className = "mensaje error";
-      console.error(error);
-    }
   }
+
+  localStorage.setItem("votanteNombre", nombre);
+  localStorage.setItem("votanteId", id);
+
+  window.location.href = "votar.html";
 };
 </script>
 
