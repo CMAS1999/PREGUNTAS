@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Resultados Encuesta</title>
+
+<style>
+body{
+  font-family: Arial, sans-serif;
+  background:#f4f6f9;
+  margin:0;
+  padding:30px;
+}
+
+.contenedor{
+  max-width:800px;
+  margin:auto;
+  background:white;
+  padding:25px;
+  border-radius:15px;
+  box-shadow:0 0 15px rgba(0,0,0,0.1);
+}
+
+h1{
+  text-align:center;
+}
+
+.pregunta{
+  margin-top:25px;
+  padding:20px;
+  border:1px solid #ddd;
+  border-radius:12px;
+}
+
+.resultado-item{
+  margin-bottom:15px;
+}
+
+.barra{
+  background:#ddd;
+  border-radius:8px;
+  overflow:hidden;
+  margin-top:5px;
+}
+
+.progreso{
+  background:#0078d4;
+  color:white;
+  padding:6px;
+  width:0%;
+  font-size:13px;
+}
+
+.ganador{
+  background:#e8f4ff;
+  padding:10px;
+  border-radius:8px;
+  margin-bottom:15px;
+  font-weight:bold;
+}
+</style>
+</head>
+
+<body>
+
+<div class="contenedor">
+  <h1>Resultados en Tiempo Real</h1>
+  <div id="resultados"></div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import {
+  getFirestore,
+  doc,
+  onSnapshot
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyAJnoku72zdNp4YpY5iMaNTRJXUb_GL2yk",
+  authDomain: "preguntas-3fb08.firebaseapp.com",
+  projectId: "preguntas-3fb08",
+  storageBucket: "preguntas-3fb08.firebasestorage.app",
+  messagingSenderId: "382488336682",
+  appId: "1:382488336682:web:a3adf0980215c50398a653",
+  measurementId: "G-99MYSVGX84"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+/* DEBE SER IGUAL QUE EN index.html */
+const preguntas = [
+  {
+    id: "trabajador",
+    texto: "¿Quién es el más trabajador?",
+    opciones: [
+      "Juan Pérez",
+      "María López",
+      "Carlos Torres",
+      "Ana Rojas"
+    ]
+  },
+  {
+    id: "puntual",
+    texto: "¿Quién es el más puntual?",
+    opciones: [
+      "Juan Pérez",
+      "María López",
+      "Carlos Torres",
+      "Ana Rojas"
+    ]
+  }
+];
+
+const contenedor = document.getElementById("resultados");
+
+preguntas.forEach(pregunta => {
+  const div = document.createElement("div");
+  div.className = "pregunta";
+  div.id = `pregunta-${pregunta.id}`;
+  div.innerHTML = `<h2>${pregunta.texto}</h2><p>Cargando resultados...</p>`;
+  contenedor.appendChild(div);
+
+  escucharResultados(pregunta);
+});
+
+function escucharResultados(pregunta){
+  const preguntaRef = doc(db, "votos", pregunta.id);
+
+  onSnapshot(preguntaRef, (docSnap) => {
+    const data = docSnap.exists() ? docSnap.data() : {};
+
+    let total = 0;
+
+    pregunta.opciones.forEach(nombre => {
+      total += data[nombre] || 0;
+    });
+
+    let ranking = pregunta.opciones.map(nombre => ({
+      nombre: nombre,
+      votos: data[nombre] || 0
+    }));
+
+    ranking.sort((a, b) => b.votos - a.votos);
+
+    let ganador = ranking[0];
+
+    let html = `<h2>${pregunta.texto}</h2>`;
+
+    if(total > 0){
+      html += `
+        <div class="ganador">
+          🥇 Va ganando: ${ganador.nombre} con ${ganador.votos} votos
+        </div>
+      `;
+    } else {
+      html += `
+        <div class="ganador">
+          Aún no hay votos.
+        </div>
+      `;
+    }
+
+    ranking.forEach(item => {
+      const porcentaje = total > 0 ? Math.round((item.votos / total) * 100) : 0;
+
+      html += `
+        <div class="resultado-item">
+          <b>${item.nombre}</b>: ${item.votos} votos (${porcentaje}%)
+          <div class="barra">
+            <div class="progreso" style="width:${porcentaje}%">
+              ${porcentaje}%
+            </div>
+          </div>
+        </div>
+      `;
+    });
+
+    html += `<b>Total de votos:</b> ${total}`;
+
+    document.getElementById(`pregunta-${pregunta.id}`).innerHTML = html;
+  });
+}
+</script>
+
+</body>
+</html>
