@@ -16,6 +16,21 @@ h1{text-align:center;color:#003b7a;}
 .barra{background:#ddd;border-radius:10px;overflow:hidden;margin-top:8px;}
 .progreso{background:linear-gradient(90deg,#f28c28,#0078d4);color:white;padding:7px;font-size:13px;font-weight:bold;}
 .total{margin-top:18px;font-weight:bold;color:#003b7a;}
+
+.boton-nav{
+  text-decoration:none;
+  background:#003b7a;
+  color:white;
+  padding:12px 20px;
+  border-radius:10px;
+  font-weight:bold;
+  transition:0.3s;
+  display:inline-block;
+}
+
+.boton-nav:hover{
+  background:#f28c28;
+}
 </style>
 </head>
 
@@ -23,6 +38,13 @@ h1{text-align:center;color:#003b7a;}
 
 <div class="contenedor">
   <h1>🏆 Resultados en Tiempo Real</h1>
+
+  <div style="text-align:center; margin-bottom:20px;">
+    <a href="preguntas.html" class="boton-nav">
+      ➕ Administrar Preguntas
+    </a>
+  </div>
+
   <div id="resultados"></div>
 </div>
 
@@ -49,6 +71,7 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
 let preguntas = [];
+let trabajadores = [];
 
 onSnapshot(collection(db, "preguntas"), (snapshot) => {
   preguntas = [];
@@ -62,8 +85,6 @@ onSnapshot(collection(db, "preguntas"), (snapshot) => {
 
   cargarResultados();
 });
-
-let trabajadores = [];
 
 onSnapshot(collection(db, "trabajadores"), (snapshot) => {
   trabajadores = [];
@@ -79,6 +100,11 @@ onSnapshot(collection(db, "trabajadores"), (snapshot) => {
 function cargarResultados(){
   const contenedor = document.getElementById("resultados");
   contenedor.innerHTML = "";
+
+  if(preguntas.length === 0){
+    contenedor.innerHTML = "<p>Aún no hay preguntas registradas.</p>";
+    return;
+  }
 
   preguntas.forEach(pregunta => {
     const div = document.createElement("div");
