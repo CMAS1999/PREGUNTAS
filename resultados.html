@@ -5,89 +5,17 @@
 <title>Resultados Encuesta</title>
 
 <style>
-body{
-  font-family: Arial, sans-serif;
-  background:#f4f6f9;
-  margin:0;
-  padding:30px;
-}
-
-.contenedor{
-  max-width:850px;
-  margin:auto;
-  background:white;
-  padding:30px;
-  border-radius:18px;
-  box-shadow:0 0 20px rgba(0,0,0,0.12);
-}
-
-h1{
-  text-align:center;
-  color:#003b7a;
-  margin-bottom:30px;
-}
-
-.pregunta{
-  margin-top:25px;
-  padding:25px;
-  border:2px solid #f28c28;
-  border-radius:16px;
-  background:#fff;
-}
-
-.pregunta h2{
-  color:#003b7a;
-}
-
-.ganador{
-  background:#fff3e6;
-  color:#003b7a;
-  padding:12px;
-  border-radius:10px;
-  margin-bottom:18px;
-  font-weight:bold;
-  border-left:6px solid #f28c28;
-}
-
-.top-card{
-  margin:15px 0;
-  padding:15px;
-  border-radius:14px;
-  background:#f8fbff;
-  border:1px solid #dcecff;
-}
-
-.top-card h3{
-  margin:0 0 8px;
-  color:#003b7a;
-}
-
-.votos{
-  font-weight:bold;
-  color:#f28c28;
-}
-
-.barra{
-  background:#ddd;
-  border-radius:10px;
-  overflow:hidden;
-  margin-top:8px;
-}
-
-.progreso{
-  background:linear-gradient(90deg, #f28c28, #0078d4);
-  color:white;
-  padding:7px;
-  width:0%;
-  font-size:13px;
-  font-weight:bold;
-}
-
-.total{
-  margin-top:18px;
-  font-weight:bold;
-  color:#003b7a;
-}
+body{font-family:Arial;background:#f4f6f9;padding:30px;}
+.contenedor{max-width:850px;margin:auto;background:white;padding:30px;border-radius:18px;box-shadow:0 0 20px #ccc;}
+h1{text-align:center;color:#003b7a;}
+.pregunta{margin-top:25px;padding:25px;border:2px solid #f28c28;border-radius:16px;}
+.ganador{background:#fff3e6;padding:12px;border-radius:10px;margin-bottom:15px;font-weight:bold;color:#003b7a;}
+.top-card{background:#f8fbff;border:1px solid #dcecff;border-radius:14px;padding:15px;margin:15px 0;}
+.top-card h3{color:#003b7a;margin:0 0 8px;}
+.votos{font-weight:bold;color:#f28c28;}
+.barra{background:#ddd;border-radius:10px;overflow:hidden;margin-top:8px;}
+.progreso{background:linear-gradient(90deg,#f28c28,#0078d4);color:white;padding:7px;font-size:13px;font-weight:bold;}
+.total{margin-top:18px;font-weight:bold;color:#003b7a;}
 </style>
 </head>
 
@@ -102,8 +30,9 @@ h1{
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import {
   getFirestore,
-  doc,
-  onSnapshot
+  collection,
+  onSnapshot,
+  doc
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -119,41 +48,39 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-/* DEBE SER IGUAL QUE EN index.html */
 const preguntas = [
-  {
-    id: "trabajador",
-    texto: "¿Quién es el más trabajador?",
-    opciones: [
-      "Juan Pérez",
-      "María López",
-      "Carlos Torres",
-      "Ana Rojas"
-    ]
-  },
-  {
-    id: "puntual",
-    texto: "¿Quién es el más puntual?",
-    opciones: [
-      "Juan Pérez",
-      "María López",
-      "Carlos Torres",
-      "Ana Rojas"
-    ]
-  }
+  { id: "trabajador", texto: "¿Quién es el más trabajador?" },
+  { id: "puntual", texto: "¿Quién es el más puntual?" },
+  { id: "responsable", texto: "¿Quién es el más responsable?" }
 ];
 
-const contenedor = document.getElementById("resultados");
+let trabajadores = [];
 
-preguntas.forEach(pregunta => {
-  const div = document.createElement("div");
-  div.className = "pregunta";
-  div.id = `pregunta-${pregunta.id}`;
-  div.innerHTML = `<h2>${pregunta.texto}</h2><p>Cargando resultados...</p>`;
-  contenedor.appendChild(div);
+onSnapshot(collection(db, "trabajadores"), (snapshot) => {
+  trabajadores = [];
 
-  escucharResultados(pregunta);
+  snapshot.forEach(docSnap => {
+    trabajadores.push(docSnap.data().nombre);
+  });
+
+  trabajadores.sort();
+  cargarResultados();
 });
+
+function cargarResultados(){
+  const contenedor = document.getElementById("resultados");
+  contenedor.innerHTML = "";
+
+  preguntas.forEach(pregunta => {
+    const div = document.createElement("div");
+    div.className = "pregunta";
+    div.id = `pregunta-${pregunta.id}`;
+    div.innerHTML = `<h2>${pregunta.texto}</h2><p>Cargando resultados...</p>`;
+    contenedor.appendChild(div);
+
+    escucharResultados(pregunta);
+  });
+}
 
 function escucharResultados(pregunta){
   const preguntaRef = doc(db, "votos", pregunta.id);
@@ -163,11 +90,11 @@ function escucharResultados(pregunta){
 
     let total = 0;
 
-    pregunta.opciones.forEach(nombre => {
+    trabajadores.forEach(nombre => {
       total += data[nombre] || 0;
     });
 
-    let ranking = pregunta.opciones.map(nombre => ({
+    let ranking = trabajadores.map(nombre => ({
       nombre: nombre,
       votos: data[nombre] || 0
     }));
@@ -185,11 +112,7 @@ function escucharResultados(pregunta){
         </div>
       `;
     } else {
-      html += `
-        <div class="ganador">
-          Aún no hay votos registrados.
-        </div>
-      `;
+      html += `<div class="ganador">Aún no hay votos registrados.</div>`;
     }
 
     top3.forEach((item, index) => {
@@ -213,7 +136,6 @@ function escucharResultados(pregunta){
           <h3>${medalla} ${puesto}</h3>
           <div><b>${item.nombre}</b></div>
           <div class="votos">${item.votos} votos (${porcentaje}%)</div>
-
           <div class="barra">
             <div class="progreso" style="width:${porcentaje}%">
               ${porcentaje}%
