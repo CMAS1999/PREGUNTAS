@@ -2,20 +2,90 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Resultados Encuesta</title>
 
 <style>
-body{font-family:Arial;background:#f4f6f9;padding:30px;}
-.contenedor{max-width:850px;margin:auto;background:white;padding:30px;border-radius:18px;box-shadow:0 0 20px #ccc;}
-h1{text-align:center;color:#003b7a;}
-.pregunta{margin-top:25px;padding:25px;border:2px solid #f28c28;border-radius:16px;}
-.ganador{background:#fff3e6;padding:12px;border-radius:10px;margin-bottom:15px;font-weight:bold;color:#003b7a;}
-.top-card{background:#f8fbff;border:1px solid #dcecff;border-radius:14px;padding:15px;margin:15px 0;}
-.top-card h3{color:#003b7a;margin:0 0 8px;}
-.votos{font-weight:bold;color:#f28c28;}
-.barra{background:#ddd;border-radius:10px;overflow:hidden;margin-top:8px;}
-.progreso{background:linear-gradient(90deg,#f28c28,#0078d4);color:white;padding:7px;font-size:13px;font-weight:bold;}
-.total{margin-top:18px;font-weight:bold;color:#003b7a;}
+*{
+  box-sizing:border-box;
+}
+
+body{
+  font-family:Arial;
+  background:#f4f6f9;
+  padding:15px;
+  margin:0;
+}
+
+.contenedor{
+  max-width:850px;
+  margin:auto;
+  background:white;
+  padding:20px;
+  border-radius:18px;
+  box-shadow:0 0 20px #ccc;
+}
+
+h1{
+  text-align:center;
+  color:#003b7a;
+}
+
+.pregunta{
+  margin-top:25px;
+  padding:20px;
+  border:2px solid #f28c28;
+  border-radius:16px;
+}
+
+.ganador{
+  background:#fff3e6;
+  padding:12px;
+  border-radius:10px;
+  margin-bottom:15px;
+  font-weight:bold;
+  color:#003b7a;
+}
+
+.top-card{
+  background:#f8fbff;
+  border:1px solid #dcecff;
+  border-radius:14px;
+  padding:15px;
+  margin:15px 0;
+}
+
+.top-card h3{
+  color:#003b7a;
+  margin:0 0 8px;
+}
+
+.votos{
+  font-weight:bold;
+  color:#f28c28;
+}
+
+.barra{
+  background:#ddd;
+  border-radius:10px;
+  overflow:hidden;
+  margin-top:8px;
+}
+
+.progreso{
+  background:linear-gradient(90deg,#f28c28,#0078d4);
+  color:white;
+  padding:7px;
+  font-size:13px;
+  font-weight:bold;
+  min-width:35px;
+}
+
+.total{
+  margin-top:18px;
+  font-weight:bold;
+  color:#003b7a;
+}
 
 .boton-nav{
   text-decoration:none;
@@ -30,6 +100,25 @@ h1{text-align:center;color:#003b7a;}
 
 .boton-nav:hover{
   background:#f28c28;
+}
+
+@media(max-width:600px){
+  h1{
+    font-size:24px;
+  }
+
+  .contenedor{
+    padding:15px;
+  }
+
+  .pregunta{
+    padding:15px;
+  }
+
+  .boton-nav{
+    width:100%;
+    text-align:center;
+  }
 }
 </style>
 </head>
